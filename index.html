@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>鋳造価格計算ツール | ワックスから金属へ</title>
+<style>
+  :root {
+    --bg: #f4f1ea;
+    --card: #ffffff;
+    --ink: #2b2b2b;
+    --sub: #6f6a60;
+    --line: #e3ddd1;
+    --accent: #b08d57;       /* 真鍮〜ゴールド系 */
+    --accent-dark: #8a6d3b;
+    --silver: #9aa3ad;
+    --ok: #2f7d57;
+    --shadow: 0 4px 18px rgba(60,50,30,.08);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.6;
+    -webkit-text-size-adjust: 100%;
+  }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 24px 16px 64px; }
+  header { text-align: center; margin-bottom: 8px; }
+  header h1 { font-size: 1.4rem; margin: 0 0 4px; letter-spacing: .04em; }
+  header p { margin: 0; color: var(--sub); font-size: .85rem; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 20px;
+    margin-top: 18px;
+    box-shadow: var(--shadow);
+  }
+
+  label.field { display: block; font-weight: 600; font-size: .9rem; margin-bottom: 6px; }
+  .hint { color: var(--sub); font-weight: 400; font-size: .78rem; }
+
+  .wax-input { position: relative; }
+  .wax-input input {
+    width: 100%;
+    font-size: 1.6rem;
+    padding: 14px 56px 14px 16px;
+    border: 2px solid var(--line);
+    border-radius: 10px;
+    text-align: right;
+    font-weight: 700;
+    color: var(--ink);
+    background: #fbf9f4;
+  }
+  .wax-input input:focus { outline: none; border-color: var(--accent); }
+  .wax-input .unit { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: var(--sub); font-weight: 600; }
+
+  .metals { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+  .metal-btn {
+    border: 2px solid var(--line);
+    background: #fbf9f4;
+    border-radius: 12px;
+    padding: 14px 10px;
+    cursor: pointer;
+    text-align: center;
+    transition: .15s;
+    position: relative;
+  }
+  .metal-btn .name { font-weight: 700; font-size: 1.05rem; }
+  .metal-btn .meta { font-size: .72rem; color: var(--sub); margin-top: 2px; }
+  .metal-btn.active { border-color: var(--accent); background: #fff8ee; box-shadow: 0 0 0 1px var(--accent) inset; }
+  .metal-btn .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 6px; vertical-align: -1px; }
+
+  /* 結果 */
+  .result-total {
+    text-align: center;
+    padding: 22px 16px 18px;
+    background: linear-gradient(135deg, #fff8ee, #fdf3e2);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    margin-top: 18px;
+  }
+  .result-total .lbl { font-size: .82rem; color: var(--sub); }
+  .result-total .val { font-size: 2.4rem; font-weight: 800; color: var(--accent-dark); letter-spacing: .02em; }
+  .result-total .val small { font-size: 1rem; font-weight: 600; }
+
+  table.breakdown { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: .92rem; }
+  table.breakdown td { padding: 9px 4px; border-bottom: 1px dashed var(--line); }
+  table.breakdown td:last-child { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+  table.breakdown tr.sum td { border-bottom: 2px solid var(--line); }
+  table.breakdown tr.total td { font-weight: 800; font-size: 1.05rem; border-bottom: none; padding-top: 12px; }
+  table.breakdown .calc { color: var(--sub); font-size: .76rem; font-weight: 400; display: block; }
+
+  /* 設定 */
+  details.settings { margin-top: 18px; }
+  details.settings > summary {
+    cursor: pointer; font-weight: 600; font-size: .9rem; color: var(--accent-dark);
+    list-style: none; padding: 10px 0;
+  }
+  details.settings > summary::-webkit-details-marker { display: none; }
+  details.settings > summary::before { content: "⚙ "; }
+  .settings-grid { border-top: 1px solid var(--line); padding-top: 14px; }
+  .setting-row { display: grid; grid-template-columns: 1fr 110px; gap: 10px; align-items: center; margin-bottom: 10px; }
+  .setting-row label { font-size: .85rem; }
+  .setting-row label small { display: block; color: var(--sub); font-size: .72rem; font-weight: 400; }
+  .setting-row input {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+    text-align: right; font-size: .95rem; background: #fbf9f4;
+  }
+  .setting-row input:focus { outline: none; border-color: var(--accent); }
+  .settings-section-title { font-weight: 700; font-size: .85rem; margin: 14px 0 8px; color: var(--ink); }
+  .btn-reset {
+    margin-top: 8px; background: none; border: 1px solid var(--line); color: var(--sub);
+    padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: .8rem;
+  }
+  .btn-reset:hover { border-color: var(--accent); color: var(--accent-dark); }
+
+  footer { text-align: center; color: var(--sub); font-size: .75rem; margin-top: 28px; line-height: 1.8; }
+  .price-note { background: #fff8ee; border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-top:14px; font-size:.78rem; color:var(--sub); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>鋳造価格 計算ツール</h1>
+    <p>ワックス原型の重量から、シルバー・真鍮などの鋳造価格を見積もります</p>
+  </header>
+
+  <!-- 入力 -->
+  <div class="card">
+    <label class="field" for="wax">ワックス重量 <span class="hint">原型の重さを入力</span></label>
+    <div class="wax-input">
+      <input id="wax" type="number" inputmode="decimal" min="0" step="0.1" placeholder="0.0" value="">
+      <span class="unit">g</span>
+    </div>
+
+    <div class="metals" id="metals"><!-- JSで生成 --></div>
+  </div>
+
+  <!-- 結果 -->
+  <div class="result-total">
+    <div class="lbl">合計（税込）</div>
+    <div class="val" id="total">¥0</div>
+  </div>
+
+  <div class="card">
+    <table class="breakdown">
+      <tbody id="breakdown"></tbody>
+    </table>
+    <div class="price-note" id="priceNote"></div>
+  </div>
+
+  <!-- 設定 -->
+  <details class="settings">
+    <summary>単価・係数の設定（地金相場の更新はこちら）</summary>
+    <div class="settings-grid" id="settingsGrid"></div>
+    <div class="setting-row" style="grid-template-columns:1fr 110px;">
+      <label>消費税率<small>%</small></label>
+      <input id="taxRate" type="number" step="0.1" min="0">
+    </div>
+    <div class="setting-row" style="grid-template-columns:1fr 110px;">
+      <label>湯口・鋳造追加重量<small>原型に加算する重量 (g)</small></label>
+      <input id="sprue" type="number" step="0.1" min="0">
+    </div>
+    <button class="btn-reset" id="resetBtn">初期値（ホワイトボードの値）に戻す</button>
+  </details>
+
+  <footer>
+    <div>計算式：金属重量 =（ワックス重量 × 比重）+ 湯口分</div>
+    <div>価格 =（金属重量 × 工賃 + 金属重量 × 地金単価）× 税</div>
+    <div style="margin-top:6px;">※ 地金相場は日々変動します。見積りの目安としてご利用ください。</div>
+  </footer>
+</div>
+
+<script>
+// ===== 初期データ（ホワイトボード 5/25 の値）=====
+const DEFAULTS = {
+  taxRate: 10,      // %
+  sprue: 2,         // g（湯口など鋳造で加算される重量）
+  metals: {
+    silver: { label: "シルバー", sub: "SV925 / 純銀", gravity: 10.5, labor: 132, metal: 549, color: "#9aa3ad" },
+    brass:  { label: "真鍮",     sub: "ブラス",        gravity: 8.6,  labor: 154, metal: 33,  color: "#b08d57" },
+  }
+};
+
+const STORE_KEY = "casting-calc-v1";
+let state = loadState();
+let selected = "silver";
+
+function loadState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORE_KEY));
+    if (saved && saved.metals) return saved;
+  } catch (e) {}
+  return JSON.parse(JSON.stringify(DEFAULTS));
+}
+function saveState() { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+
+const yen = n => "¥" + Math.round(n).toLocaleString("ja-JP");
+const g = n => (Math.round(n * 100) / 100).toLocaleString("ja-JP");
+
+// ===== 金属選択ボタン描画 =====
+function renderMetals() {
+  const box = document.getElementById("metals");
+  box.innerHTML = "";
+  for (const [key, m] of Object.entries(state.metals)) {
+    const btn = document.createElement("div");
+    btn.className = "metal-btn" + (key === selected ? " active" : "");
+    btn.innerHTML = `
+      <div class="name"><span class="dot" style="background:${m.color}"></span>${m.label}</div>
+      <div class="meta">${m.sub}<br>地金 ¥${m.metal.toLocaleString()}/g</div>`;
+    btn.onclick = () => { selected = key; renderMetals(); calc(); };
+    box.appendChild(btn);
+  }
+}
+
+// ===== 計算 =====
+function calc() {
+  const wax = parseFloat(document.getElementById("wax").value) || 0;
+  const m = state.metals[selected];
+  const metalWeight = wax > 0 ? wax * m.gravity + state.sprue : 0;
+  const laborCost = metalWeight * m.labor;
+  const materialCost = metalWeight * m.metal;
+  const subtotal = laborCost + materialCost;
+  const tax = subtotal * (state.taxRate / 100);
+  const total = subtotal + tax;
+
+  document.getElementById("total").innerHTML = total > 0
+    ? yen(total) + ' <small>税込</small>'
+    : "¥0";
+
+  const rows = [
+    ["金属重量", `${g(metalWeight)} g`, `ワックス ${g(wax)}g × 比重${m.gravity} + 湯口${state.sprue}g`],
+    ["工賃", yen(laborCost), `${g(metalWeight)}g × ¥${m.labor}/g`],
+    ["地金代", yen(materialCost), `${g(metalWeight)}g × ¥${m.metal}/g`],
+  ];
+  let html = "";
+  rows.forEach((r, i) => {
+    html += `<tr${i===rows.length-1?' class="sum"':''}><td>${r[0]}<span class="calc">${r[2]}</span></td><td>${r[1]}</td></tr>`;
+  });
+  html += `<tr><td>小計</td><td>${yen(subtotal)}</td></tr>`;
+  html += `<tr class="sum"><td>消費税（${state.taxRate}%）</td><td>${yen(tax)}</td></tr>`;
+  html += `<tr class="total"><td>合計</td><td>${yen(total)}</td></tr>`;
+  document.getElementById("breakdown").innerHTML = html;
+
+  document.getElementById("priceNote").textContent =
+    `${m.label}：比重 ${m.gravity} ／ 工賃 ¥${m.labor}/g ／ 地金 ¥${m.metal}/g`;
+}
+
+// ===== 設定UI =====
+function renderSettings() {
+  const grid = document.getElementById("settingsGrid");
+  grid.innerHTML = "";
+  for (const [key, m] of Object.entries(state.metals)) {
+    const title = document.createElement("div");
+    title.className = "settings-section-title";
+    title.innerHTML = `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${m.color};margin-right:6px;"></span>${m.label}`;
+    grid.appendChild(title);
+    grid.appendChild(makeRow(`${key}-metal`, "地金単価", "円/g（相場で更新）", m.metal, v => m.metal = v));
+    grid.appendChild(makeRow(`${key}-labor`, "工賃（鋳造代）", "円/g", m.labor, v => m.labor = v));
+    grid.appendChild(makeRow(`${key}-gravity`, "比重", "金属の比重", m.gravity, v => m.gravity = v));
+  }
+  document.getElementById("taxRate").value = state.taxRate;
+  document.getElementById("sprue").value = state.sprue;
+}
+
+function makeRow(id, label, sub, value, onChange) {
+  const row = document.createElement("div");
+  row.className = "setting-row";
+  row.innerHTML = `<label for="${id}">${label}<small>${sub}</small></label>`;
+  const input = document.createElement("input");
+  input.type = "number"; input.step = "0.01"; input.min = "0"; input.id = id; input.value = value;
+  input.oninput = () => { onChange(parseFloat(input.value) || 0); saveState(); renderMetals(); calc(); };
+  row.appendChild(input);
+  return row;
+}
+
+// ===== イベント =====
+document.getElementById("wax").addEventListener("input", calc);
+document.getElementById("taxRate").addEventListener("input", e => { state.taxRate = parseFloat(e.target.value) || 0; saveState(); calc(); });
+document.getElementById("sprue").addEventListener("input", e => { state.sprue = parseFloat(e.target.value) || 0; saveState(); calc(); });
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if (confirm("単価・係数をホワイトボードの初期値に戻しますか？")) {
+    state = JSON.parse(JSON.stringify(DEFAULTS));
+    saveState(); renderMetals(); renderSettings(); calc();
+  }
+});
+
+// ===== 起動 =====
+renderMetals();
+renderSettings();
+calc();
+</script>
+</body>
+</html>
