@@ -165,18 +165,19 @@
       <label>湯口・鋳造追加重量<small>原型に加算する重量 (g)</small></label>
       <input id="sprue" type="number" step="0.1" min="0">
     </div>
-    <button class="btn-reset" id="resetBtn">初期値（ホワイトボードの値）に戻す</button>
+    <button class="btn-reset" id="resetBtn">初期値に戻す</button>
   </details>
 
   <footer>
     <div>計算式：金属重量 =（ワックス重量 × 比重）+ 湯口分</div>
     <div>価格 =（金属重量 × 工賃 + 金属重量 × 地金単価）× 税</div>
     <div style="margin-top:6px;">※ 地金相場は日々変動します。見積りの目安としてご利用ください。</div>
+    <div style="margin-top:10px;">お問い合わせ：<a href="mailto:kakipo@gmail.com">kakipo@gmail.com</a></div>
   </footer>
 </div>
 
 <script>
-// ===== 初期データ（ホワイトボード 5/25 の値）=====
+// ===== 初期データ =====
 const DEFAULTS = {
   taxRate: 10,      // %
   sprue: 2,         // g（湯口など鋳造で加算される重量）
@@ -283,7 +284,7 @@ document.getElementById("wax").addEventListener("input", calc);
 document.getElementById("taxRate").addEventListener("input", e => { state.taxRate = parseFloat(e.target.value) || 0; saveState(); calc(); });
 document.getElementById("sprue").addEventListener("input", e => { state.sprue = parseFloat(e.target.value) || 0; saveState(); calc(); });
 document.getElementById("resetBtn").addEventListener("click", () => {
-  if (confirm("単価・係数をホワイトボードの初期値に戻しますか？")) {
+  if (confirm("単価・係数を初期値に戻しますか？")) {
     state = JSON.parse(JSON.stringify(DEFAULTS));
     saveState(); renderMetals(); renderSettings(); calc();
   }
