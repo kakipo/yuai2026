@@ -162,14 +162,14 @@
       <input id="taxRate" type="number" step="0.1" min="0">
     </div>
     <div class="setting-row" style="grid-template-columns:1fr 110px;">
-      <label>湯口・鋳造追加重量<small>原型に加算する重量 (g)</small></label>
-      <input id="sprue" type="number" step="0.1" min="0">
+      <label>湯口・鋳造追加率<small>金属重量に加算する割合 (%)</small></label>
+      <input id="sprueRate" type="number" step="0.1" min="0">
     </div>
     <button class="btn-reset" id="resetBtn">初期値に戻す</button>
   </details>
 
   <footer>
-    <div>計算式：金属重量 =（ワックス重量 × 比重）+ 湯口分</div>
+    <div>計算式：金属重量 =（ワックス重量 × 比重）×（1 + 湯口率）</div>
     <div>価格 =（金属重量 × 工賃 + 金属重量 × 地金単価）× 税</div>
     <div style="margin-top:6px;">※ 地金相場は日々変動します。見積りの目安としてご利用ください。</div>
     <div style="margin-top:10px;">お問い合わせ：<a href="mailto:kakipo@gmail.com">kakipo@gmail.com</a></div>
@@ -180,14 +180,14 @@
 // ===== 初期データ =====
 const DEFAULTS = {
   taxRate: 10,      // %
-  sprue: 2,         // g（湯口など鋳造で加算される重量）
+  sprueRate: 2,     // %（湯口など鋳造で金属重量に加算される割合）
   metals: {
     silver: { label: "シルバー", sub: "SV925 / 純銀", gravity: 10.5, labor: 132, metal: 549, color: "#9aa3ad" },
     brass:  { label: "真鍮",     sub: "ブラス",        gravity: 8.6,  labor: 154, metal: 33,  color: "#b08d57" },
   }
 };
 
-const STORE_KEY = "casting-calc-v1";
+const STORE_KEY = "casting-calc-v2";
 let state = loadState();
 let selected = "silver";
 
@@ -222,7 +222,7 @@ function renderMetals() {
 function calc() {
   const wax = parseFloat(document.getElementById("wax").value) || 0;
   const m = state.metals[selected];
-  const metalWeight = wax > 0 ? wax * m.gravity + state.sprue : 0;
+  const metalWeight = wax > 0 ? wax * m.gravity * (1 + state.sprueRate / 100) : 0;
   const laborCost = metalWeight * m.labor;
   const materialCost = metalWeight * m.metal;
   const subtotal = laborCost + materialCost;
@@ -234,7 +234,7 @@ function calc() {
     : "¥0";
 
   const rows = [
-    ["金属重量", `${g(metalWeight)} g`, `ワックス ${g(wax)}g × 比重${m.gravity} + 湯口${state.sprue}g`],
+    ["金属重量", `${g(metalWeight)} g`, `ワックス ${g(wax)}g × 比重${m.gravity} ＋湯口 ${state.sprueRate}%`],
     ["工賃", yen(laborCost), `${g(metalWeight)}g × ¥${m.labor}/g`],
     ["地金代", yen(materialCost), `${g(metalWeight)}g × ¥${m.metal}/g`],
   ];
@@ -265,7 +265,7 @@ function renderSettings() {
     grid.appendChild(makeRow(`${key}-gravity`, "比重", "金属の比重", m.gravity, v => m.gravity = v));
   }
   document.getElementById("taxRate").value = state.taxRate;
-  document.getElementById("sprue").value = state.sprue;
+  document.getElementById("sprueRate").value = state.sprueRate;
 }
 
 function makeRow(id, label, sub, value, onChange) {
@@ -282,7 +282,7 @@ function makeRow(id, label, sub, value, onChange) {
 // ===== イベント =====
 document.getElementById("wax").addEventListener("input", calc);
 document.getElementById("taxRate").addEventListener("input", e => { state.taxRate = parseFloat(e.target.value) || 0; saveState(); calc(); });
-document.getElementById("sprue").addEventListener("input", e => { state.sprue = parseFloat(e.target.value) || 0; saveState(); calc(); });
+document.getElementById("sprueRate").addEventListener("input", e => { state.sprueRate = parseFloat(e.target.value) || 0; saveState(); calc(); });
 document.getElementById("resetBtn").addEventListener("click", () => {
   if (confirm("単価・係数を初期値に戻しますか？")) {
     state = JSON.parse(JSON.stringify(DEFAULTS));
