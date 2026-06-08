@@ -112,6 +112,7 @@
   }
   .setting-row input:focus { outline: none; border-color: var(--accent); }
   .settings-section-title { font-weight: 700; font-size: .85rem; margin: 14px 0 8px; color: var(--ink); }
+  .settings-section-title.common-title { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
   .btn-reset {
     margin-top: 8px; background: none; border: 1px solid var(--line); color: var(--sub);
     padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: .8rem;
@@ -157,6 +158,7 @@
   <details class="settings">
     <summary>単価・係数の設定（地金相場の更新はこちら）</summary>
     <div class="settings-grid" id="settingsGrid"></div>
+    <div class="settings-section-title common-title">共通設定（金属に依らない設定）</div>
     <div class="setting-row" style="grid-template-columns:1fr 110px;">
       <label>消費税率<small>%</small></label>
       <input id="taxRate" type="number" step="0.1" min="0">
