@@ -25,8 +25,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+
       - name: Fetch latest prices
-        run: python3 scripts/update_prices.py
+        run: ruby scripts/update_prices.rb
 
       - name: Commit prices.json if changed
         run: |

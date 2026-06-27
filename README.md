@@ -31,7 +31,7 @@
 #### 地金相場の自動取得
 
 シルバーの地金単価は、Seaforce（加工net）の[鋳造料金表](https://www.kakounet.com/cast/cast/price.html)から
-**GitHub Actions が日次で取得**し、`yuai2026/prices.json` に保存します。ページ表示時にこれを読み込み、
+**GitHub Actions が日次で取得**（`scripts/update_prices.rb`）し、`yuai2026/prices.json` に保存します。ページ表示時にこれを読み込み、
 シルバー地金単価へ自動反映します（取得失敗時は既定値で動作）。真鍮・工賃は固定値のため対象外です。
 
 > 表示価格はあくまで目安です。実際の請求は仕上がり時の地金相場によります（Seaforce の注記に準拠）。
@@ -59,7 +59,7 @@
 - `main` への push で `.github/workflows/deploy-pages.yml` が走り、リポジトリ全体を GitHub Pages にデプロイします。
 - ルートの `CNAME` ファイルで独自ドメイン `tools.kakipo.com` を指定しています。
 - 新しいツールを追加するときは、リポジトリ直下に `<ツール名>/index.html` を置くだけで `tools.kakipo.com/<ツール名>/` で公開されます。
-- `.github/workflows/update-prices.yml` が日次（cron）で `scripts/update_prices.py` を実行し、地金相場を取得して `yuai2026/prices.json` を更新・再デプロイします（手動実行も可）。
+- `.github/workflows/update-prices.yml` が日次（cron）で `scripts/update_prices.rb`（Ruby）を実行し、地金相場を取得して `yuai2026/prices.json` を更新・再デプロイします（手動実行も可）。
 
 ### 独自ドメインの DNS 設定（初回のみ）
 
