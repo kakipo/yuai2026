@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: '0 0 * * *'   # 毎日 00:00 UTC（=09:00 JST）
   workflow_dispatch:
+    inputs:
+      simulate_failure:
+        description: 'メール通知テスト用：価格取得を強制的に失敗させる（通常はfalse）'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -35,7 +40,12 @@ jobs:
       - name: Fetch latest prices
         id: fetch
         continue-on-error: true
-        run: ruby scripts/update_prices.rb
+        run: |
+          if [ "${{ inputs.simulate_failure }}" = "true" ]; then
+            echo "::warning::simulate_failure=true：通知テストのため強制的に失敗させます"
+            exit 1
+          fi
+          ruby scripts/update_prices.rb
 
       - name: Commit price files if changed
         run: |
