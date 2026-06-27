@@ -4,6 +4,8 @@
   "sourceUpdated": "2026/6/26",
   "fetchedAt": "2026-06-27",
   "metals": {
-    "silver": { "metal": 476 }
+    "silver": {
+      "metal": 476
+    }
   }
 }
