@@ -121,6 +121,8 @@
 
   footer { text-align: center; color: var(--sub); font-size: .75rem; margin-top: 28px; line-height: 1.8; }
   .price-note { background: #fff8ee; border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-top:14px; font-size:.78rem; color:var(--sub); }
+  .chart-title { font-weight: 700; font-size: .9rem; margin-bottom: 10px; }
+  .chart-wrap { position: relative; height: 240px; }
 </style>
 </head>
 <body>
@@ -155,6 +157,13 @@
     <div class="price-note" id="sourceNote"></div>
   </div>
 
+  <!-- 銀地金 価格推移チャート -->
+  <div class="card chart-card">
+    <div class="chart-title">銀地金 価格推移（円/g・税込）</div>
+    <div class="chart-wrap"><canvas id="priceChart"></canvas></div>
+    <div class="price-note" id="chartNote"></div>
+  </div>
+
   <!-- 設定 -->
   <details class="settings">
     <summary>単価・係数の設定（地金相場の更新はこちら）</summary>
@@ -175,6 +184,7 @@
   </footer>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script>
 // ===== 初期データ =====
 // 単価はすべて税込（Seaforce 鋳造料金表ベース）。合計も税込で表示する。
@@ -307,11 +317,54 @@ function applyLivePrices() {
     });
 }
 
+// ===== 価格推移チャート =====
+let priceChart = null;
+function renderChart(history) {
+  const card = document.querySelector(".chart-card");
+  if (!card) return;
+  const ok = Array.isArray(history) && history.length > 0 && typeof Chart !== "undefined";
+  if (!ok) { card.style.display = "none"; return; }
+
+  const labels  = history.map(h => h.date);
+  const casting = history.map(h => (typeof h.casting === "number" ? h.casting : null));
+  const market  = history.map(h => (typeof h.market === "number" ? h.market : null));
+
+  if (priceChart) priceChart.destroy();
+  priceChart = new Chart(document.getElementById("priceChart"), {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        { label: "鋳造相場 (Seaforce SV925/950)", data: casting,
+          borderColor: "#8a9099", backgroundColor: "#8a9099", tension: .2, spanGaps: true, pointRadius: 3 },
+        { label: "一般相場 (田中貴金属 銀)", data: market,
+          borderColor: "#2f7ed8", backgroundColor: "#2f7ed8", tension: .2, spanGaps: true, pointRadius: 3 },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: "index", intersect: false },
+      plugins: { legend: { labels: { boxWidth: 12, font: { size: 11 } } } },
+      scales: { y: { title: { display: true, text: "円/g（税込）" } } },
+    },
+  });
+  document.getElementById("chartNote").textContent =
+    "出典：Seaforce 鋳造料金 ／ 田中貴金属 店頭小売価格（いずれも税込・目安）。日次で更新・蓄積。";
+}
+function loadHistory() {
+  fetch("./prices-history.json", { cache: "no-store" })
+    .then(r => r.ok ? r.json() : Promise.reject(r.status))
+    .then(renderChart)
+    .catch(() => { const c = document.querySelector(".chart-card"); if (c) c.style.display = "none"; });
+}
+
 // ===== 起動 =====
 renderMetals();
 renderSettings();
 calc();
 applyLivePrices();
+loadHistory();
 </script>
 </body>
 </html>

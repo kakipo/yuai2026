@@ -7,5 +7,10 @@
     "silver": {
       "metal": 476
     }
+  },
+  "market": {
+    "silver": 352.22,
+    "source": "田中貴金属（銀・店頭小売価格・税込）",
+    "sourceUpdated": "2026/6/26"
   }
 }
