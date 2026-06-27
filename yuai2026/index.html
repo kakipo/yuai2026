@@ -152,6 +152,7 @@
       <tbody id="breakdown"></tbody>
     </table>
     <div class="price-note" id="priceNote"></div>
+    <div class="price-note" id="sourceNote"></div>
   </div>
 
   <!-- 設定 -->
@@ -159,10 +160,6 @@
     <summary>単価・係数の設定（地金相場の更新はこちら）</summary>
     <div class="settings-grid" id="settingsGrid"></div>
     <div class="settings-section-title common-title">共通設定（金属に依らない設定）</div>
-    <div class="setting-row" style="grid-template-columns:1fr 110px;">
-      <label>消費税率<small>%</small></label>
-      <input id="taxRate" type="number" step="0.1" min="0">
-    </div>
     <div class="setting-row" style="grid-template-columns:1fr 110px;">
       <label>湯口・鋳造追加率<small>金属重量に加算する割合 (%)</small></label>
       <input id="sprueRate" type="number" step="0.1" min="0">
@@ -172,24 +169,24 @@
 
   <footer>
     <div>計算式：金属重量 =（ワックス重量 × 比重）×（1 + 湯口率）</div>
-    <div>価格 =（金属重量 × 工賃 + 金属重量 × 地金単価）× 税</div>
-    <div style="margin-top:6px;">※ 地金相場は日々変動します。見積りの目安としてご利用ください。</div>
+    <div>合計（税込）= 金属重量 × 工賃 ＋ 金属重量 × 地金単価</div>
+    <div style="margin-top:6px;">※ 単価はすべて税込。地金相場は日々変動し、実際の請求は仕上がり時の相場によります。表示はあくまで目安です。</div>
     <div style="margin-top:10px;">お問い合わせ：<a href="mailto:kakipo@gmail.com">kakipo@gmail.com</a></div>
   </footer>
 </div>
 
 <script>
 // ===== 初期データ =====
+// 単価はすべて税込（Seaforce 鋳造料金表ベース）。合計も税込で表示する。
 const DEFAULTS = {
-  taxRate: 10,      // %
-  sprueRate: 2,     // %（湯口など鋳造で金属重量に加算される割合）
+  sprueRate: 2,     // %（湯口など鋳造で金属重量に加算される割合＝目減り分）
   metals: {
-    silver: { label: "シルバー", sub: "SV925 / 純銀", gravity: 10.5, labor: 132, metal: 549, color: "#9aa3ad" },
+    silver: { label: "シルバー", sub: "SV925 / SV950", gravity: 10.5, labor: 132, metal: 476, color: "#9aa3ad" },
     brass:  { label: "真鍮",     sub: "ブラス",        gravity: 8.6,  labor: 154, metal: 33,  color: "#b08d57" },
   }
 };
 
-const STORE_KEY = "casting-calc-v2";
+const STORE_KEY = "casting-calc-v3";
 let state = loadState();
 let selected = "silver";
 
@@ -227,9 +224,7 @@ function calc() {
   const metalWeight = wax > 0 ? wax * m.gravity * (1 + state.sprueRate / 100) : 0;
   const laborCost = metalWeight * m.labor;
   const materialCost = metalWeight * m.metal;
-  const subtotal = laborCost + materialCost;
-  const tax = subtotal * (state.taxRate / 100);
-  const total = subtotal + tax;
+  const total = laborCost + materialCost;  // 単価が税込のため合計も税込
 
   document.getElementById("total").innerHTML = total > 0
     ? yen(total) + ' <small>税込</small>'
@@ -244,9 +239,7 @@ function calc() {
   rows.forEach((r, i) => {
     html += `<tr${i===rows.length-1?' class="sum"':''}><td>${r[0]}<span class="calc">${r[2]}</span></td><td>${r[1]}</td></tr>`;
   });
-  html += `<tr><td>小計</td><td>${yen(subtotal)}</td></tr>`;
-  html += `<tr class="sum"><td>消費税（${state.taxRate}%）</td><td>${yen(tax)}</td></tr>`;
-  html += `<tr class="total"><td>合計</td><td>${yen(total)}</td></tr>`;
+  html += `<tr class="total"><td>合計（税込）</td><td>${yen(total)}</td></tr>`;
   document.getElementById("breakdown").innerHTML = html;
 
   document.getElementById("priceNote").textContent =
@@ -266,7 +259,6 @@ function renderSettings() {
     grid.appendChild(makeRow(`${key}-labor`, "工賃（鋳造代）", "円/g", m.labor, v => m.labor = v));
     grid.appendChild(makeRow(`${key}-gravity`, "比重", "金属の比重", m.gravity, v => m.gravity = v));
   }
-  document.getElementById("taxRate").value = state.taxRate;
   document.getElementById("sprueRate").value = state.sprueRate;
 }
 
@@ -283,7 +275,6 @@ function makeRow(id, label, sub, value, onChange) {
 
 // ===== イベント =====
 document.getElementById("wax").addEventListener("input", calc);
-document.getElementById("taxRate").addEventListener("input", e => { state.taxRate = parseFloat(e.target.value) || 0; saveState(); calc(); });
 document.getElementById("sprueRate").addEventListener("input", e => { state.sprueRate = parseFloat(e.target.value) || 0; saveState(); calc(); });
 document.getElementById("resetBtn").addEventListener("click", () => {
   if (confirm("単価・係数を初期値に戻しますか？")) {
@@ -292,10 +283,35 @@ document.getElementById("resetBtn").addEventListener("click", () => {
   }
 });
 
+// ===== 地金相場の自動取得（GitHub Actionsが日次でprices.jsonを更新）=====
+// シルバー地金単価のみ最新相場（税込）で上書きする。取得失敗時は既定値のまま。
+function applyLivePrices() {
+  fetch("./prices.json", { cache: "no-store" })
+    .then(r => r.ok ? r.json() : Promise.reject(r.status))
+    .then(data => {
+      const sv = data && data.metals && data.metals.silver && data.metals.silver.metal;
+      if (typeof sv === "number" && sv > 0) {
+        state.metals.silver.metal = sv;
+        DEFAULTS.metals.silver.metal = sv;  // 「初期値に戻す」も最新相場に
+        saveState();
+        renderSettings();
+        calc();
+      }
+      const when = data && data.sourceUpdated ? `（Seaforce ${data.sourceUpdated}時点）` : "";
+      document.getElementById("sourceNote").textContent =
+        `シルバー地金単価は自動取得${when}。税込・目安です（実請求は仕上がり時の相場）。`;
+    })
+    .catch(() => {
+      document.getElementById("sourceNote").textContent =
+        "シルバー地金単価は自動取得できませんでした。設定値（目安）で計算しています。";
+    });
+}
+
 // ===== 起動 =====
 renderMetals();
 renderSettings();
 calc();
+applyLivePrices();
 </script>
 </body>
 </html>
