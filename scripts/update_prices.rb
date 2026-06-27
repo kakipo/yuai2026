@@ -112,12 +112,17 @@ def main
     market_date = parse_market_date(html) rescue ""
   end
 
+  # 今回フレッシュに取得できたか（フォールバック適用前で判定）
+  failed = []
+  failed << "Seaforce(鋳造)" if casting.nil?
+  failed << "田中貴金属(一般)" if market.nil?
+
   casting ||= prev_casting
   market  ||= prev_market
 
   if casting.nil? && market.nil?
-    warn "WARN: 両系列とも取得できず、ファイルを更新しません"
-    return 0
+    warn "ERROR: 両系列とも取得できず、前回値も無いため更新しません"
+    return 1
   end
 
   today = Date.today.to_s
@@ -142,6 +147,12 @@ def main
   File.write(HISTORY, JSON.pretty_generate(history) + "\n")
 
   puts "OK: casting=#{casting} market=#{market} date=#{today} (history #{history.size} pts)"
+
+  unless failed.empty?
+    # ファイルは前回値で更新済み。取得失敗は終了コード1で知らせる（CIで失敗通知）。
+    warn "ERROR: 価格取得に失敗（前回値で補完）: #{failed.join(', ')}"
+    return 1
+  end
   0
 end
 

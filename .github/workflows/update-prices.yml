@@ -30,18 +30,22 @@ jobs:
         with:
           ruby-version: '3.3'
 
+      # 取得失敗でもデプロイは続行したいので continue-on-error。
+      # 失敗は最後のステップでジョブを失敗にして通知する。
       - name: Fetch latest prices
+        id: fetch
+        continue-on-error: true
         run: ruby scripts/update_prices.rb
 
-      - name: Commit prices.json if changed
+      - name: Commit price files if changed
         run: |
-          if git diff --quiet -- yuai2026/prices.json; then
+          if git diff --quiet -- yuai2026/prices.json yuai2026/prices-history.json; then
             echo "価格に変更なし"
           else
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add yuai2026/prices.json
-            git commit -m "Update casting prices from Seaforce"
+            git add yuai2026/prices.json yuai2026/prices-history.json
+            git commit -m "Update silver prices (casting/market)"
             git push
           fi
 
@@ -54,3 +58,11 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+
+      # 価格取得が失敗していたらジョブを失敗にする（GitHubが失敗メールを送る）。
+      # デプロイは上で完了済みなので、サイト自体は前回値で更新される。
+      - name: Fail the run if price fetch failed
+        if: steps.fetch.outcome == 'failure'
+        run: |
+          echo "::error::銀地金価格の取得に失敗しました。ログとスクレイパ(scripts/update_prices.rb)を確認してください。"
+          exit 1
