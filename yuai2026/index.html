@@ -304,6 +304,7 @@ function applyLivePrices() {
         state.metals.silver.metal = sv;
         DEFAULTS.metals.silver.metal = sv;  // 「初期値に戻す」も最新相場に
         saveState();
+        renderMetals();
         renderSettings();
         calc();
       }
