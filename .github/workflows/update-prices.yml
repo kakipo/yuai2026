@@ -35,29 +35,42 @@ jobs:
         with:
           ruby-version: '3.3'
 
-      # 取得失敗でもデプロイは続行したいので continue-on-error。
-      # 失敗は最後のステップでジョブを失敗にして通知する。
-      - name: Fetch latest prices
-        id: fetch
+      # 取得→コミット→push を1ステップで実行する。
+      # push は他の更新と競合して non-fast-forward で弾かれることがあるため、
+      # 「最新mainへ同期 → 価格を再生成 → push」をリトライする（履歴は常に最新へ
+      # 追記されるので衝突しない）。失敗してもデプロイは続けたいので continue-on-error。
+      - name: Update prices
+        id: update
         continue-on-error: true
         run: |
           if [ "${{ inputs.simulate_failure }}" = "true" ]; then
             echo "::warning::simulate_failure=true：通知テストのため強制的に失敗させます"
             exit 1
           fi
-          ruby scripts/update_prices.rb
-
-      - name: Commit price files if changed
-        run: |
-          if git diff --quiet -- yuai2026/prices.json yuai2026/prices-history.json; then
-            echo "価格に変更なし"
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          for attempt in 1 2 3 4 5; do
+            git fetch --quiet origin main
+            git reset --hard --quiet origin/main
+            if ! ruby scripts/update_prices.rb; then
+              echo "::warning::価格取得に失敗しました（前回値で更新済み）"
+              exit 1
+            fi
+            if git diff --quiet -- yuai2026/prices.json yuai2026/prices-history.json; then
+              echo "価格に変更なし"
+              exit 0
+            fi
             git add yuai2026/prices.json yuai2026/prices-history.json
-            git commit -m "Update silver prices (casting/market)"
-            git push
-          fi
+            git commit --quiet -m "Update silver prices (casting/market)"
+            if git push; then
+              echo "pushed (attempt ${attempt})"
+              exit 0
+            fi
+            echo "push rejected, retrying (${attempt}/5)…"
+            sleep $((attempt * 3))
+          done
+          echo "::error::push が5回失敗しました"
+          exit 1
 
       - name: Setup Pages
         uses: actions/configure-pages@v6
@@ -69,10 +82,10 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v5
 
-      # 価格取得が失敗していたらジョブを失敗にする（GitHubが失敗メールを送る）。
-      # デプロイは上で完了済みなので、サイト自体は前回値で更新される。
-      - name: Fail the run if price fetch failed
-        if: steps.fetch.outcome == 'failure'
+      # 更新が失敗していたらジョブを失敗にする（GitHubが失敗メールを送る）。
+      # デプロイは上で完了済みなので、サイト自体は最新（or前回）値で更新される。
+      - name: Fail the run if update failed
+        if: steps.update.outcome == 'failure'
         run: |
-          echo "::error::銀地金価格の取得に失敗しました。ログとスクレイパ(scripts/update_prices.rb)を確認してください。"
+          echo "::error::銀地金価格の更新に失敗しました（取得 or push）。ログを確認してください。"
           exit 1
