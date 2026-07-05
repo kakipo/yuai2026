@@ -308,7 +308,13 @@ function applyLivePrices() {
         renderSettings();
         calc();
       }
-      const when = data && data.sourceUpdated ? `（Seaforce ${data.sourceUpdated}時点）` : "";
+      // 日付は「取得日（fetchedAt）」を主軸にする（表示中の金額・チャートと基準を揃える）。
+      // Seaforceの公表日は平日のみ更新で土日祝は据え置かれるため、参考として併記。
+      const fetched = data && data.fetchedAt ? String(data.fetchedAt).replace(/-/g, "/") : "";
+      const parts = [];
+      if (fetched) parts.push(`${fetched} 取得`);
+      if (data && data.sourceUpdated) parts.push(`Seaforce公表 ${data.sourceUpdated}`);
+      const when = parts.length ? `（${parts.join("・")}）` : "";
       document.getElementById("sourceNote").textContent =
         `シルバー地金単価は自動取得${when}。税込・目安です（実請求は仕上がり時の相場）。`;
     })
