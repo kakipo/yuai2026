@@ -1,16 +1,16 @@
 {
   "source": "https://www.kakounet.com/cast/cast/price.html",
   "note": "地金単価は税込・目安。実際の請求は仕上がり時の相場によります。",
-  "sourceUpdated": "2026/7/9",
-  "fetchedAt": "2026-07-10",
+  "sourceUpdated": "2026/7/10",
+  "fetchedAt": "2026-07-11",
   "metals": {
     "silver": {
-      "metal": 483
+      "metal": 490
     }
   },
   "market": {
-    "silver": 356.29,
+    "silver": 360.03,
     "source": "田中貴金属（銀・店頭小売価格・税込）",
-    "sourceUpdated": "2026/7/9"
+    "sourceUpdated": "2026/7/10"
   }
 }
