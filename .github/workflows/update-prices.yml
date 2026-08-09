@@ -24,7 +24,7 @@ jobs:
   update:
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url || steps.deployment_retry.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -78,8 +78,17 @@ jobs:
         uses: actions/upload-pages-artifact@v5
         with:
           path: '.'
+      # Pages デプロイは稀に一過性で失敗するため、失敗したら待って1回リトライ。
       - name: Deploy to GitHub Pages
         id: deployment
+        continue-on-error: true
+        uses: actions/deploy-pages@v5
+      - name: Wait before retry
+        if: steps.deployment.outcome == 'failure'
+        run: sleep 20
+      - name: Deploy to GitHub Pages (retry)
+        id: deployment_retry
+        if: steps.deployment.outcome == 'failure'
         uses: actions/deploy-pages@v5
 
       # 更新が失敗していたらジョブを失敗にする（GitHubが失敗メールを送る）。
