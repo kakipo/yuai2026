@@ -11,3 +11,10 @@
   - 鋳造相場＝Seaforce SV925/950、一般相場＝田中貴金属 銀（いずれも税込・円/g）。
   - `yuai2026/prices.json`＝最新値、`yuai2026/prices-history.json`＝日次の時系列（チャート用）。
   - チャートは Chart.js（CDN）で2系列を重ねて表示。履歴は導入日から蓄積（過去分なし）。
+
+## DNS・ドメイン
+- `kakipo.com` のレジストラは Squarespace だが、**DNS は Cloudflare 管理**（2026-07-31 にネームサーバー移行）。
+  DNS レコードの変更は Cloudflare ダッシュボードで行う。Squarespace 側の DNS 設定は無効なので触らない。
+- `tools` サブドメインは CNAME → `kakipo.github.io`（**Proxy は DNS only／グレー雲**。GitHub Pages の証明書発行のため）。
+- 過去の障害: NS 移行時に `tools` の CNAME が引き継がれず NXDOMAIN になった（2026-08 復旧）。
+  NS やレコードを変更した際は `tools.kakipo.com` の疎通確認をすること。
