@@ -12,22 +12,26 @@
   {
     "date": "2026-06-29",
     "casting": 476,
-    "market": 342.87
+    "market": 342.87,
+    "spot": 302.74
   },
   {
     "date": "2026-06-30",
     "casting": 476,
-    "market": 343.75
+    "market": 343.75,
+    "spot": 310.62
   },
   {
     "date": "2026-07-01",
     "casting": 477,
-    "market": 346.17
+    "market": 346.17,
+    "spot": 314.32
   },
   {
     "date": "2026-07-02",
     "casting": 481,
-    "market": 351.78
+    "market": 351.78,
+    "spot": 315.04
   },
   {
     "date": "2026-07-03",
@@ -47,27 +51,32 @@
   {
     "date": "2026-07-06",
     "casting": 497,
-    "market": 376.64
+    "market": 376.64,
+    "spot": 323.18
   },
   {
     "date": "2026-07-07",
     "casting": 507,
-    "market": 364.87
+    "market": 364.87,
+    "spot": 317.14
   },
   {
     "date": "2026-07-08",
     "casting": 503,
-    "market": 366.41
+    "market": 366.41,
+    "spot": 303.86
   },
   {
     "date": "2026-07-09",
     "casting": 491,
-    "market": 363.88
+    "market": 363.88,
+    "spot": 315.27
   },
   {
     "date": "2026-07-10",
     "casting": 483,
-    "market": 356.29
+    "market": 356.29,
+    "spot": 311.26
   },
   {
     "date": "2026-07-11",
@@ -82,27 +91,32 @@
   {
     "date": "2026-07-13",
     "casting": 490,
-    "market": 360.03
+    "market": 360.03,
+    "spot": 300.44
   },
   {
     "date": "2026-07-14",
     "casting": 486,
-    "market": 350.13
+    "market": 350.13,
+    "spot": 306.53
   },
   {
     "date": "2026-07-15",
     "casting": 476,
-    "market": 352.33
+    "market": 352.33,
+    "spot": 298.17
   },
   {
     "date": "2026-07-16",
     "casting": 488,
-    "market": 350.46
+    "market": 350.46,
+    "spot": 291.5
   },
   {
     "date": "2026-07-17",
     "casting": 482,
-    "market": 342.87
+    "market": 342.87,
+    "spot": 292.5
   },
   {
     "date": "2026-07-18",
@@ -117,27 +131,32 @@
   {
     "date": "2026-07-20",
     "casting": 469,
-    "market": 336.16
+    "market": 336.16,
+    "spot": 296.54
   },
   {
     "date": "2026-07-21",
     "casting": 469,
-    "market": 336.16
+    "market": 336.16,
+    "spot": 307.84
   },
   {
     "date": "2026-07-22",
     "casting": 474,
-    "market": 356.51
+    "market": 356.51,
+    "spot": 314.67
   },
   {
     "date": "2026-07-23",
     "casting": 495,
-    "market": 357.94
+    "market": 357.94,
+    "spot": 303.77
   },
   {
     "date": "2026-07-24",
     "casting": 499,
-    "market": 352.22
+    "market": 352.22,
+    "spot": 308.94
   },
   {
     "date": "2026-07-25",
@@ -152,27 +171,32 @@
   {
     "date": "2026-07-27",
     "casting": 483,
-    "market": 353.32
+    "market": 353.32,
+    "spot": 307.63
   },
   {
     "date": "2026-07-28",
     "casting": 496,
-    "market": 361.57
+    "market": 361.57,
+    "spot": 301.94
   },
   {
     "date": "2026-07-29",
     "casting": 483,
-    "market": 349.25
+    "market": 349.25,
+    "spot": 304.5
   },
   {
     "date": "2026-07-30",
     "casting": 477,
-    "market": 353.32
+    "market": 353.32,
+    "spot": 308.11
   },
   {
     "date": "2026-07-31",
     "casting": 482,
-    "market": 347.6
+    "market": 347.6,
+    "spot": 296.7
   },
   {
     "date": "2026-08-01",
@@ -187,27 +211,32 @@
   {
     "date": "2026-08-03",
     "casting": 481,
-    "market": 347.49
+    "market": 347.49,
+    "spot": 290.49
   },
   {
     "date": "2026-08-04",
     "casting": 468,
-    "market": 338.69
+    "market": 338.69,
+    "spot": 303.93
   },
   {
     "date": "2026-08-05",
     "casting": 474,
-    "market": 345.84
+    "market": 345.84,
+    "spot": 314.63
   },
   {
     "date": "2026-08-06",
     "casting": 483,
-    "market": 360.8
+    "market": 360.8,
+    "spot": 311.76
   },
   {
     "date": "2026-08-07",
     "casting": 499,
-    "market": 357.5
+    "market": 357.5,
+    "spot": 322.41
   },
   {
     "date": "2026-08-08",
@@ -222,27 +251,32 @@
   {
     "date": "2026-08-10",
     "casting": 499,
-    "market": 373.78
+    "market": 373.78,
+    "spot": 332.07
   },
   {
     "date": "2026-08-11",
     "casting": 515,
-    "market": 377.41
+    "market": 377.41,
+    "spot": 331.51
   },
   {
     "date": "2026-08-12",
     "casting": 515,
-    "market": 377.41
+    "market": 377.41,
+    "spot": 335.3
   },
   {
     "date": "2026-08-13",
     "casting": 515,
-    "market": 388.74
+    "market": 388.74,
+    "spot": 332.32
   },
   {
     "date": "2026-08-14",
     "casting": 515,
-    "market": 381.37
+    "market": 381.37,
+    "spot": 332.24
   },
   {
     "date": "2026-08-15",
@@ -257,27 +291,32 @@
   {
     "date": "2026-08-17",
     "casting": 515,
-    "market": 380.16
+    "market": 380.16,
+    "spot": 338.5
   },
   {
     "date": "2026-08-18",
     "casting": 521,
-    "market": 386.87
+    "market": 386.87,
+    "spot": 328.3
   },
   {
     "date": "2026-08-19",
     "casting": 530,
-    "market": 384.56
+    "market": 384.56,
+    "spot": 336.22
   },
   {
     "date": "2026-08-20",
     "casting": 504,
-    "market": 371.25
+    "market": 371.25,
+    "spot": 347.22
   },
   {
     "date": "2026-08-21",
     "casting": 532,
-    "market": 395.89
+    "market": 395.89,
+    "spot": 354.44
   },
   {
     "date": "2026-08-22",
@@ -292,27 +331,32 @@
   {
     "date": "2026-08-24",
     "casting": 540,
-    "market": 409.97
+    "market": 409.97,
+    "spot": 350.64
   },
   {
     "date": "2026-08-25",
     "casting": 546,
-    "market": 405.13
+    "market": 405.13,
+    "spot": 351.39
   },
   {
     "date": "2026-08-26",
     "casting": 550,
-    "market": 395.45
+    "market": 395.45,
+    "spot": 347.72
   },
   {
     "date": "2026-08-27",
     "casting": 546,
-    "market": 399.63
+    "market": 399.63,
+    "spot": 355.79
   },
   {
     "date": "2026-08-28",
     "casting": 549,
-    "market": 402.27
+    "market": 402.27,
+    "spot": 343.94
   },
   {
     "date": "2026-08-29",
@@ -327,27 +371,32 @@
   {
     "date": "2026-08-31",
     "casting": 549,
-    "market": 415.36
+    "market": 415.36,
+    "spot": 340.07
   },
   {
     "date": "2026-09-01",
     "casting": 534,
-    "market": 394.9
+    "market": 394.9,
+    "spot": 332.74
   },
   {
     "date": "2026-09-02",
     "casting": 534,
-    "market": 391.38
+    "market": 391.38,
+    "spot": 332.11
   },
   {
     "date": "2026-09-03",
     "casting": 517,
-    "market": 377.85
+    "market": 377.85,
+    "spot": 335.93
   },
   {
     "date": "2026-09-04",
     "casting": 519,
-    "market": 383.46
+    "market": 383.46,
+    "spot": 331.79
   },
   {
     "date": "2026-09-05",
@@ -367,22 +416,26 @@
   {
     "date": "2026-09-08",
     "casting": 516,
-    "market": 378.29
+    "market": 378.29,
+    "spot": 328.89
   },
   {
     "date": "2026-09-09",
     "casting": 514,
-    "market": 375.98
+    "market": 375.98,
+    "spot": 334.8
   },
   {
     "date": "2026-09-10",
     "casting": 508,
-    "market": 379.17
+    "market": 379.17,
+    "spot": 318.66
   },
   {
     "date": "2026-09-11",
     "casting": 521,
-    "market": 381.15
+    "market": 381.15,
+    "spot": 319.7
   },
   {
     "date": "2026-09-12",
@@ -397,27 +450,32 @@
   {
     "date": "2026-09-14",
     "casting": 501,
-    "market": 365.53
+    "market": 365.53,
+    "spot": 315.59
   },
   {
     "date": "2026-09-15",
     "casting": 501,
-    "market": 363.44
+    "market": 363.44,
+    "spot": 315.13
   },
   {
     "date": "2026-09-16",
     "casting": 495,
-    "market": 361.24
+    "market": 361.24,
+    "spot": 320.47
   },
   {
     "date": "2026-09-17",
     "casting": 502,
-    "market": 366.85
+    "market": 366.85,
+    "spot": 327.71
   },
   {
     "date": "2026-09-18",
     "casting": 506,
-    "market": 371.36
+    "market": 371.36,
+    "spot": 337.86
   },
   {
     "date": "2026-09-19",
@@ -432,27 +490,32 @@
   {
     "date": "2026-09-21",
     "casting": 520,
-    "market": 395.45
+    "market": 395.45,
+    "spot": 332.83
   },
   {
     "date": "2026-09-22",
     "casting": 520,
-    "market": 395.45
+    "market": 395.45,
+    "spot": 333.18
   },
   {
     "date": "2026-09-23",
     "casting": 520,
-    "market": 395.45
+    "market": 395.45,
+    "spot": 326.88
   },
   {
     "date": "2026-09-24",
     "casting": 520,
-    "market": 395.45
+    "market": 395.45,
+    "spot": 324.08
   },
   {
     "date": "2026-09-25",
     "casting": 516,
-    "market": 376.09
+    "market": 376.09,
+    "spot": 325.51
   },
   {
     "date": "2026-09-26",
@@ -467,27 +530,32 @@
   {
     "date": "2026-09-28",
     "casting": 508,
-    "market": 373.23
+    "market": 373.23,
+    "spot": 308.78
   },
   {
     "date": "2026-09-29",
     "casting": 506,
-    "market": 356.07
+    "market": 356.07,
+    "spot": 306.47
   },
   {
     "date": "2026-09-30",
     "casting": 488,
-    "market": 357.5
+    "market": 357.5,
+    "spot": 303.35
   },
   {
     "date": "2026-10-01",
     "casting": 494,
-    "market": 356.29
+    "market": 356.29,
+    "spot": 308.43
   },
   {
     "date": "2026-10-02",
     "casting": 487,
-    "market": 356.51
+    "market": 356.51,
+    "spot": 304.04
   },
   {
     "date": "2026-10-03",
@@ -502,27 +570,32 @@
   {
     "date": "2026-10-05",
     "casting": 493,
-    "market": 357.61
+    "market": 357.61,
+    "spot": 309.65
   },
   {
     "date": "2026-10-06",
     "casting": 493,
-    "market": 358.93
+    "market": 358.93,
+    "spot": 310.9
   },
   {
     "date": "2026-10-07",
     "casting": 491,
-    "market": 356.18
+    "market": 356.18,
+    "spot": 304.72
   },
   {
     "date": "2026-10-08",
     "casting": 496,
-    "market": 354.86
+    "market": 354.86,
+    "spot": 300.57
   },
   {
     "date": "2026-10-09",
     "casting": 483,
-    "market": 346.72
+    "market": 346.72,
+    "spot": 308.68
   },
   {
     "date": "2026-10-10",
@@ -537,27 +610,32 @@
   {
     "date": "2026-10-12",
     "casting": 483,
-    "market": 354.86
+    "market": 354.86,
+    "spot": 306.67
   },
   {
     "date": "2026-10-13",
     "casting": 483,
-    "market": 354.86
+    "market": 354.86,
+    "spot": 300.76
   },
   {
     "date": "2026-10-14",
     "casting": 486,
-    "market": 355.08
+    "market": 355.08,
+    "spot": 282.99
   },
   {
     "date": "2026-10-15",
     "casting": 481,
-    "market": 346.28
+    "market": 346.28,
+    "spot": 288.69
   },
   {
     "date": "2026-10-16",
     "casting": 457,
-    "market": 332.2
+    "market": 332.2,
+    "spot": 289.56
   },
   {
     "date": "2026-10-17",
@@ -572,22 +650,26 @@
   {
     "date": "2026-10-19",
     "casting": 466,
-    "market": 338.69
+    "market": 338.69,
+    "spot": 289.86
   },
   {
     "date": "2026-10-20",
     "casting": 466,
-    "market": 338.58
+    "market": 338.58,
+    "spot": 293.38
   },
   {
     "date": "2026-10-21",
     "casting": 464,
-    "market": 337.15
+    "market": 337.15,
+    "spot": 291.47
   },
   {
     "date": "2026-10-22",
     "casting": 464,
-    "market": 337.26
+    "market": 337.26,
+    "spot": 276.52
   },
   {
     "date": "2026-10-25",

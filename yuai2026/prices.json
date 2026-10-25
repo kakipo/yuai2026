@@ -14,8 +14,8 @@
     "sourceUpdated": "2026/10/21"
   },
   "spot": {
-    "silver": null,
-    "source": "銀スポット（LBMA銀価格 × ECB USD/JPY 換算・税抜・円/g）",
-    "sourceUpdated": null
+    "silver": 271.97,
+    "source": "銀スポット（Yahoo Finance 銀価格 × ECB USD/JPY 換算・税抜・円/g）",
+    "sourceUpdated": "2026-10-23"
   }
 }
