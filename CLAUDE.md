@@ -9,8 +9,8 @@
 - 鋳造価格ツール: `yuai2026/`。単価は税込で扱い、合計も税込（消費税の別途加算なし）。
 - シルバー地金単価は `scripts/update_prices.rb`（Ruby）が日次取得し保存。ページ起動時に読み込んで反映する。
   - 鋳造相場＝Seaforce SV925/950、一般相場＝田中貴金属 銀（いずれも税込・円/g）、
-    銀スポット＝LBMA銀価格×ECB USD/JPY（Frankfurter API）の換算（税抜・円/g、履歴へ自動バックフィル）。
-    ※stooq は GitHub Actions の共有IPだと回数制限で使えない（2026-10に乗り換え済み）。
+    銀スポット＝Yahoo Finance 銀価格×ECB USD/JPY（Frankfurter API）の換算（税抜・円/g、履歴へ自動バックフィル）。
+    ※GitHub Actions のIPからは stooq（回数制限）・LBMA（403）は使えない（2026-10に検証済み）。Frankfurter は実績あり。
   - 田中貴金属は 2026-10-23 以降 GitHub Actions のIPに HTTP 503（アクセス制限）で取得不能。
     1日1回だけ試行して復活したら自動再開。田中の失敗ではビルドを失敗扱いにしない。
   - `yuai2026/prices.json`＝最新値、`yuai2026/prices-history.json`＝日次の時系列（チャート用）。

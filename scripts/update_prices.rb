@@ -9,10 +9,11 @@
 #   - 一般相場 (market):  田中貴金属 銀 店頭小売価格（税込・円/g）
 #       ※2026-10-23 以降、GitHub Actions のIP帯には HTTP 503 を返すため取得不能。
 #         1日1回だけ試行し、復活したら自動で記録を再開する（失敗しても異常扱いしない）。
-#   - 銀スポット (spot): LBMA 公式の銀価格（USD/トロイオンス）× ECB 公式レート
+#   - 銀スポット (spot): Yahoo Finance の銀価格（USD/トロイオンス）× ECB 公式レート
 #       （Frankfurter API の USD/JPY）から換算した 円/g（税抜）。
-#       どちらもプログラム利用前提の公開APIで、履歴ごと取得して自動バックフィルする。
-#       ※当初は stooq を使ったが、GitHub Actions の共有IPでは回数制限に当たるため乗り換えた。
+#       どちらも履歴ごと取得して自動バックフィルする。
+#       ※GitHub Actions のIPからは stooq（回数制限）と LBMA（HTTP 403）が使えなかったため
+#         この構成に落ち着いた。Frankfurter は CI からの取得実績あり。
 #
 # 出力:
 #   - yuai2026/prices.json         … 最新スナップショット（ページの地金単価反映に使用）
@@ -21,7 +22,7 @@
 # 方針:
 #   - 履歴には「実際に観測できた値」だけを記録する（補完値は入れない）
 #   - prices.json（計算ツール用の最新値）は前回値で補完して動作を維持する
-#   - Seaforce またはスポット（LBMA/為替）の取得に失敗したら終了コード1（CI側で通知。コミット・デプロイは継続）
+#   - Seaforce またはスポット（銀価格/為替）の取得に失敗したら終了コード1（CI側で通知。コミット・デプロイは継続）
 
 require "net/http"
 require "uri"
@@ -32,8 +33,13 @@ SEAFORCE_URL  = "https://www.kakounet.com/cast/cast/price.html"
 TANAKA_URL    = "https://gold.tanaka.co.jp/commodity/souba/"
 # スポット履歴の取得開始日（ツールの履歴開始に合わせる）
 SPOT_FROM_DATE = "2026-06-01"
-# LBMA 銀価格（全履歴JSON・USD/トロイオンス）
-LBMA_AG_URL = "https://prices.lbma.org.uk/json/silver.json"
+# Yahoo Finance chart API（銀価格・USD/トロイオンス）。シンボルは順に試す
+# （XAGUSD=X: スポット、SI=F: COMEX先物。前者が取れない環境向けのフォールバック）。
+YAHOO_AG_SYMBOLS = ["XAGUSD=X", "SI=F"].freeze
+
+def yahoo_chart_url(symbol)
+  "https://query1.finance.yahoo.com/v8/finance/chart/#{symbol}?range=1y&interval=1d"
+end
 # ECB 公式レート（Frankfurter API）の USD/JPY 履歴
 FX_URL = "https://api.frankfurter.dev/v1/#{SPOT_FROM_DATE}..?base=USD&symbols=JPY"
 
@@ -103,27 +109,36 @@ def parse_market_date(html)
   m ? "#{m[1]}/#{m[2].to_i}/#{m[3].to_i}" : ""
 end
 
-# --- 銀スポット（LBMA × ECB/Frankfurter） ------------------------------------
+# --- 銀スポット（Yahoo Finance × ECB/Frankfurter） ---------------------------
 # 解析失敗時の調査用に、レスポンス冒頭を潰して添える
 def body_snippet(s)
   s.to_s.gsub(/\s+/, " ").strip[0, 120]
 end
 
-# LBMA 銀価格JSON: [{"d":"YYYY-MM-DD","v":[USD,GBP,EUR]}, ...] → { 日付 => USD/oz }
-def parse_lbma_silver(body)
+# Yahoo chart API: chart.result[0] の timestamp[] / indicators.quote[0].close[]
+# → { "YYYY-MM-DD" => USD/oz }
+def parse_yahoo_silver(body)
   data = JSON.parse(body)
-  raise "LBMA: 配列ではありません（#{body_snippet(body)}）" unless data.is_a?(Array)
+  result = data.dig("chart", "result", 0)
+  raise "Yahoo: result がありません（#{body_snippet(body)}）" unless result.is_a?(Hash)
+
+  ts     = result["timestamp"]
+  closes = result.dig("indicators", "quote", 0, "close")
+  unless ts.is_a?(Array) && closes.is_a?(Array)
+    raise "Yahoo: 時系列がありません（#{body_snippet(body)}）"
+  end
 
   series = {}
-  data.each do |row|
-    d = row["d"]
-    v = row.dig("v", 0)
-    next unless d.is_a?(String) && d >= SPOT_FROM_DATE
-    next unless v.is_a?(Numeric) && v.positive?
+  ts.each_with_index do |t, i|
+    v = closes[i]
+    next unless t.is_a?(Numeric) && v.is_a?(Numeric) && v.positive?
+
+    d = Time.at(t).utc.strftime("%Y-%m-%d")
+    next unless d >= SPOT_FROM_DATE
 
     series[d] = v.to_f
   end
-  raise "LBMA: #{SPOT_FROM_DATE} 以降の有効データがありません（#{body_snippet(body)}）" if series.empty?
+  raise "Yahoo: #{SPOT_FROM_DATE} 以降の有効データがありません" if series.empty?
 
   series
 end
@@ -212,7 +227,11 @@ def main
     market_date = parse_market_date(html) rescue ""
   end
 
-  ag    = try_fetch("LBMA 銀価格") { parse_lbma_silver(fetch_html(LBMA_AG_URL)) }
+  ag = nil
+  YAHOO_AG_SYMBOLS.each do |sym|
+    ag = try_fetch("Yahoo 銀価格(#{sym})") { parse_yahoo_silver(fetch_html(yahoo_chart_url(sym))) }
+    break if ag
+  end
   jpy   = try_fetch("Frankfurter USD/JPY") { parse_usdjpy(fetch_html(FX_URL)) }
   spots = (ag && jpy) ? spot_series_jpy_per_g(ag, jpy) : nil
 
@@ -221,7 +240,7 @@ def main
   fresh_market  = market
   failed = []
   failed << "Seaforce(鋳造)" if fresh_casting.nil?
-  failed << "スポット(LBMA/為替)" if spots.nil?
+  failed << "スポット(銀価格/為替)" if spots.nil?
 
   # 計算ツール用の最新値（prices.json）は前回値で補完して動作を維持する
   casting ||= prev_casting
@@ -249,7 +268,7 @@ def main
     },
     "spot"          => {
       "silver"        => (latest_spot || prev_spot),
-      "source"        => "銀スポット（LBMA銀価格 × ECB USD/JPY 換算・税抜・円/g）",
+      "source"        => "銀スポット（Yahoo Finance 銀価格 × ECB USD/JPY 換算・税抜・円/g）",
       "sourceUpdated" => (latest_spot_date || prev.dig("spot", "sourceUpdated")),
     },
   }
