@@ -15,7 +15,7 @@
   },
   "spot": {
     "silver": null,
-    "source": "銀スポット（stooq XAG/USD × USD/JPY 換算・税抜・円/g）",
+    "source": "銀スポット（LBMA銀価格 × ECB USD/JPY 換算・税抜・円/g）",
     "sourceUpdated": null
   }
 }
