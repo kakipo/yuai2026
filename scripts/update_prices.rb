@@ -9,8 +9,10 @@
 #   - 一般相場 (market):  田中貴金属 銀 店頭小売価格（税込・円/g）
 #       ※2026-10-23 以降、GitHub Actions のIP帯には HTTP 503 を返すため取得不能。
 #         1日1回だけ試行し、復活したら自動で記録を再開する（失敗しても異常扱いしない）。
-#   - 銀スポット (spot): stooq の XAG/USD × USD/JPY 終値から換算した 円/g（税抜）。
-#       全履歴CSVを毎回取得し、prices-history.json の欠けている日付を自動バックフィルする。
+#   - 銀スポット (spot): LBMA 公式の銀価格（USD/トロイオンス）× ECB 公式レート
+#       （Frankfurter API の USD/JPY）から換算した 円/g（税抜）。
+#       どちらもプログラム利用前提の公開APIで、履歴ごと取得して自動バックフィルする。
+#       ※当初は stooq を使ったが、GitHub Actions の共有IPでは回数制限に当たるため乗り換えた。
 #
 # 出力:
 #   - yuai2026/prices.json         … 最新スナップショット（ページの地金単価反映に使用）
@@ -19,7 +21,7 @@
 # 方針:
 #   - 履歴には「実際に観測できた値」だけを記録する（補完値は入れない）
 #   - prices.json（計算ツール用の最新値）は前回値で補完して動作を維持する
-#   - Seaforce または stooq の取得に失敗したら終了コード1（CI側で通知。コミット・デプロイは継続）
+#   - Seaforce またはスポット（LBMA/為替）の取得に失敗したら終了コード1（CI側で通知。コミット・デプロイは継続）
 
 require "net/http"
 require "uri"
@@ -28,8 +30,12 @@ require "date"
 
 SEAFORCE_URL  = "https://www.kakounet.com/cast/cast/price.html"
 TANAKA_URL    = "https://gold.tanaka.co.jp/commodity/souba/"
-STOOQ_XAG_URL = "https://stooq.com/q/d/l/?s=xagusd&i=d"
-STOOQ_JPY_URL = "https://stooq.com/q/d/l/?s=usdjpy&i=d"
+# スポット履歴の取得開始日（ツールの履歴開始に合わせる）
+SPOT_FROM_DATE = "2026-06-01"
+# LBMA 銀価格（全履歴JSON・USD/トロイオンス）
+LBMA_AG_URL = "https://prices.lbma.org.uk/json/silver.json"
+# ECB 公式レート（Frankfurter API）の USD/JPY 履歴
+FX_URL = "https://api.frankfurter.dev/v1/#{SPOT_FROM_DATE}..?base=USD&symbols=JPY"
 
 PRICES  = File.expand_path("../yuai2026/prices.json", __dir__)
 HISTORY = File.expand_path("../yuai2026/prices-history.json", __dir__)
@@ -97,29 +103,50 @@ def parse_market_date(html)
   m ? "#{m[1]}/#{m[2].to_i}/#{m[3].to_i}" : ""
 end
 
-# --- stooq（銀スポット） ----------------------------------------------------
-# 日次CSV（ヘッダ: Date,Open,High,Low,Close,Volume）→ { "YYYY-MM-DD" => 終値 }
-def parse_stooq_csv(csv)
-  series = {}
-  csv.each_line.drop(1).each do |line|
-    cols = line.strip.split(",")
-    next unless cols[0] =~ /\A\d{4}-\d{2}-\d{2}\z/
+# --- 銀スポット（LBMA × ECB/Frankfurter） ------------------------------------
+# 解析失敗時の調査用に、レスポンス冒頭を潰して添える
+def body_snippet(s)
+  s.to_s.gsub(/\s+/, " ").strip[0, 120]
+end
 
-    close = begin
-      Float(cols[4])
-    rescue StandardError
-      next
-    end
-    series[cols[0]] = close
+# LBMA 銀価格JSON: [{"d":"YYYY-MM-DD","v":[USD,GBP,EUR]}, ...] → { 日付 => USD/oz }
+def parse_lbma_silver(body)
+  data = JSON.parse(body)
+  raise "LBMA: 配列ではありません（#{body_snippet(body)}）" unless data.is_a?(Array)
+
+  series = {}
+  data.each do |row|
+    d = row["d"]
+    v = row.dig("v", 0)
+    next unless d.is_a?(String) && d >= SPOT_FROM_DATE
+    next unless v.is_a?(Numeric) && v.positive?
+
+    series[d] = v.to_f
   end
-  raise "stooq: 有効なデータ行がありません" if series.empty?
+  raise "LBMA: #{SPOT_FROM_DATE} 以降の有効データがありません（#{body_snippet(body)}）" if series.empty?
 
   series
 end
 
-# XAG/USD（USD/トロイオンス）と USD/JPY から 円/g（税抜）のスポット系列を作る
-def spot_series_jpy_per_g(xag, jpy)
-  (xag.keys & jpy.keys).to_h { |d| [d, (xag[d] / TROY_OUNCE_G * jpy[d]).round(2)] }
+# Frankfurter: {"rates":{"YYYY-MM-DD":{"JPY":155.1}, ...}} → { 日付 => JPY }
+def parse_usdjpy(body)
+  data = JSON.parse(body)
+  rates = data["rates"]
+  raise "Frankfurter: rates がありません（#{body_snippet(body)}）" unless rates.is_a?(Hash)
+
+  series = {}
+  rates.each do |d, h|
+    v = h.is_a?(Hash) ? h["JPY"] : nil
+    series[d] = v.to_f if v.is_a?(Numeric) && v.positive?
+  end
+  raise "Frankfurter: JPY の有効データがありません（#{body_snippet(body)}）" if series.empty?
+
+  series
+end
+
+# 銀USD/oz と USD/JPY から 円/g（税抜）のスポット系列を作る（共通日付のみ）
+def spot_series_jpy_per_g(ag_usd, jpy)
+  (ag_usd.keys & jpy.keys).to_h { |d| [d, (ag_usd[d] / TROY_OUNCE_G * jpy[d]).round(2)] }
 end
 
 # --- 入出力ヘルパ -----------------------------------------------------------
@@ -185,16 +212,16 @@ def main
     market_date = parse_market_date(html) rescue ""
   end
 
-  xag   = try_fetch("stooq XAG/USD") { parse_stooq_csv(fetch_html(STOOQ_XAG_URL)) }
-  jpy   = try_fetch("stooq USD/JPY") { parse_stooq_csv(fetch_html(STOOQ_JPY_URL)) }
-  spots = (xag && jpy) ? spot_series_jpy_per_g(xag, jpy) : nil
+  ag    = try_fetch("LBMA 銀価格") { parse_lbma_silver(fetch_html(LBMA_AG_URL)) }
+  jpy   = try_fetch("Frankfurter USD/JPY") { parse_usdjpy(fetch_html(FX_URL)) }
+  spots = (ag && jpy) ? spot_series_jpy_per_g(ag, jpy) : nil
 
   # 今回フレッシュに取得できた値（履歴にはこれだけを記録する）
   fresh_casting = casting
   fresh_market  = market
   failed = []
   failed << "Seaforce(鋳造)" if fresh_casting.nil?
-  failed << "stooq(スポット)" if spots.nil?
+  failed << "スポット(LBMA/為替)" if spots.nil?
 
   # 計算ツール用の最新値（prices.json）は前回値で補完して動作を維持する
   casting ||= prev_casting
@@ -222,7 +249,7 @@ def main
     },
     "spot"          => {
       "silver"        => (latest_spot || prev_spot),
-      "source"        => "銀スポット（stooq XAG/USD × USD/JPY 換算・税抜・円/g）",
+      "source"        => "銀スポット（LBMA銀価格 × ECB USD/JPY 換算・税抜・円/g）",
       "sourceUpdated" => (latest_spot_date || prev.dig("spot", "sourceUpdated")),
     },
   }
