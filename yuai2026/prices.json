@@ -12,5 +12,10 @@
     "silver": 337.26,
     "source": "田中貴金属（銀・店頭小売価格・税込）",
     "sourceUpdated": "2026/10/21"
+  },
+  "spot": {
+    "silver": null,
+    "source": "銀スポット（stooq XAG/USD × USD/JPY 換算・税抜・円/g）",
+    "sourceUpdated": null
   }
 }
