@@ -10,8 +10,10 @@
 #   - yuai2026/prices.json         … 最新スナップショット（ページの地金単価反映に使用）
 #   - yuai2026/prices-history.json … 日次の時系列（チャート用、当日分を upsert）
 #
-# どちらかの取得・解析に失敗しても、前回値で補完して可能な範囲で更新し、
-# 終了コード0で抜ける（デプロイ継続・サイトは前回値で動作）。
+# どちらかの取得・解析に失敗した場合:
+#   - prices.json（計算ツール用の最新値）は前回値で補完する
+#   - prices-history.json には「実際に取得できた値」だけを記録する（補完値は入れない）
+#   - 終了コード1で失敗を知らせる（CI側でコミット・デプロイは継続し、通知のみ失敗にする）
 
 require "net/http"
 require "uri"
@@ -23,18 +25,37 @@ TANAKA_URL   = "https://gold.tanaka.co.jp/commodity/souba/"
 
 PRICES  = File.expand_path("../yuai2026/prices.json", __dir__)
 HISTORY = File.expand_path("../yuai2026/prices-history.json", __dir__)
-UA = "Mozilla/5.0 (compatible; tools.kakipo.com price-bot; +https://tools.kakipo.com/yuai2026/)"
 
-def fetch_html(url)
-  uri = URI.parse(url)
-  http = Net::HTTP.new(uri.host, uri.port)
-  http.use_ssl = (uri.scheme == "https")
-  http.open_timeout = 30
-  http.read_timeout = 30
-  res = http.get(uri.request_uri, "User-Agent" => UA)
-  raise "HTTP #{res.code}" unless res.is_a?(Net::HTTPSuccess)
+# 2026-10-23 から田中貴金属が bot 向け UA に HTTP 503 を返すようになったため、
+# 一般的なブラウザ相当のリクエストヘッダで取得する（公開価格を1日1回参照するのみ）。
+UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
+HEADERS = {
+  "User-Agent"      => UA,
+  "Accept"          => "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+  "Accept-Language" => "ja,en-US;q=0.9,en;q=0.8",
+}.freeze
 
-  res.body.force_encoding("UTF-8")
+def fetch_html(url, tries: 3)
+  attempt = 0
+  begin
+    attempt += 1
+    uri = URI.parse(url)
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = (uri.scheme == "https")
+    http.open_timeout = 30
+    http.read_timeout = 30
+    res = http.get(uri.request_uri, HEADERS.dup)
+    raise "HTTP #{res.code}" unless res.is_a?(Net::HTTPSuccess)
+
+    res.body.force_encoding("UTF-8")
+  rescue StandardError => e
+    if attempt < tries
+      warn "  retry #{attempt}/#{tries - 1}（#{url}）: #{e}"
+      sleep attempt * 5
+      retry
+    end
+    raise
+  end
 end
 
 # --- Seaforce（鋳造相場） ---------------------------------------------------
@@ -112,11 +133,14 @@ def main
     market_date = parse_market_date(html) rescue ""
   end
 
-  # 今回フレッシュに取得できたか（フォールバック適用前で判定）
+  # 今回フレッシュに取得できた値（履歴にはこれだけを記録する）
+  fresh_casting = casting
+  fresh_market  = market
   failed = []
-  failed << "Seaforce(鋳造)" if casting.nil?
-  failed << "田中貴金属(一般)" if market.nil?
+  failed << "Seaforce(鋳造)" if fresh_casting.nil?
+  failed << "田中貴金属(一般)" if fresh_market.nil?
 
+  # 計算ツール用の最新値（prices.json）は前回値で補完して動作を維持する
   casting ||= prev_casting
   market  ||= prev_market
 
@@ -143,10 +167,15 @@ def main
 
   history = load_json(HISTORY, [])
   history = [] unless history.is_a?(Array)
-  upsert_history(history, today, casting, market)
+  # 補完値を「その日の観測値」として残さない：実測できた系列だけを記録する
+  unless fresh_casting.nil? && fresh_market.nil?
+    upsert_history(history, today, fresh_casting, fresh_market)
+  end
   File.write(HISTORY, JSON.pretty_generate(history) + "\n")
 
-  puts "OK: casting=#{casting} market=#{market} date=#{today} (history #{history.size} pts)"
+  puts "OK: casting=#{casting}#{fresh_casting.nil? ? '(補完)' : ''} " \
+       "market=#{market}#{fresh_market.nil? ? '(補完)' : ''} " \
+       "date=#{today} (history #{history.size} pts)"
 
   unless failed.empty?
     # ファイルは前回値で更新済み。取得失敗は終了コード1で知らせる（CIで失敗通知）。

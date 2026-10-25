@@ -36,9 +36,10 @@ jobs:
           ruby-version: '3.3'
 
       # 取得→コミット→push を1ステップで実行する。
-      # push は他の更新と競合して non-fast-forward で弾かれることがあるため、
-      # 「最新mainへ同期 → 価格を再生成 → push」をリトライする（履歴は常に最新へ
-      # 追記されるので衝突しない）。失敗してもデプロイは続けたいので continue-on-error。
+      # - push は競合し得るため「最新mainへ同期 → 再生成 → push」を最大5回リトライ
+      #   （履歴は常に最新へ追記されるので衝突しない）。
+      # - 取得が一部失敗しても（スクリプトが exit 1 でも）コミット・pushは行い、
+      #   リポジトリと配信サイトを一致させる。失敗は最後のステップで通知する。
       - name: Update prices
         id: update
         continue-on-error: true
@@ -49,28 +50,37 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          fetch_failed=0
+          pushed=""
           for attempt in 1 2 3 4 5; do
             git fetch --quiet origin main
             git reset --hard --quiet origin/main
-            if ! ruby scripts/update_prices.rb; then
-              echo "::warning::価格取得に失敗しました（前回値で更新済み）"
-              exit 1
+            if ruby scripts/update_prices.rb; then
+              fetch_failed=0
+            else
+              fetch_failed=1
+              echo "::warning::価格取得に一部失敗（取得できた分と補完値でファイルは更新済み）"
             fi
             if git diff --quiet -- yuai2026/prices.json yuai2026/prices-history.json; then
               echo "価格に変更なし"
-              exit 0
+              pushed=1
+              break
             fi
             git add yuai2026/prices.json yuai2026/prices-history.json
             git commit --quiet -m "Update silver prices (casting/market)"
             if git push; then
               echo "pushed (attempt ${attempt})"
-              exit 0
+              pushed=1
+              break
             fi
             echo "push rejected, retrying (${attempt}/5)…"
             sleep $((attempt * 3))
           done
-          echo "::error::push が5回失敗しました"
-          exit 1
+          if [ -z "$pushed" ]; then
+            echo "::error::push が5回失敗しました"
+            exit 1
+          fi
+          exit "$fetch_failed"
 
       - name: Setup Pages
         uses: actions/configure-pages@v6
