@@ -159,7 +159,7 @@
 
   <!-- 銀地金 価格推移チャート -->
   <div class="card chart-card">
-    <div class="chart-title">銀地金 価格推移（円/g・税込）</div>
+    <div class="chart-title">銀地金 価格推移（円/g）</div>
     <div class="chart-wrap"><canvas id="priceChart"></canvas></div>
     <div class="price-note" id="chartNote"></div>
   </div>
@@ -335,6 +335,7 @@ function renderChart(history) {
   const labels  = history.map(h => h.date);
   const casting = history.map(h => (typeof h.casting === "number" ? h.casting : null));
   const market  = history.map(h => (typeof h.market === "number" ? h.market : null));
+  const spot    = history.map(h => (typeof h.spot === "number" ? h.spot : null));
 
   if (priceChart) priceChart.destroy();
   priceChart = new Chart(document.getElementById("priceChart"), {
@@ -342,10 +343,12 @@ function renderChart(history) {
     data: {
       labels,
       datasets: [
-        { label: "鋳造相場 (Seaforce SV925/950)", data: casting,
-          borderColor: "#8a9099", backgroundColor: "#8a9099", tension: .2, spanGaps: true, pointRadius: 3 },
-        { label: "一般相場 (田中貴金属 銀)", data: market,
-          borderColor: "#2f7ed8", backgroundColor: "#2f7ed8", tension: .2, spanGaps: true, pointRadius: 3 },
+        { label: "鋳造相場 (Seaforce SV925/950・税込)", data: casting,
+          borderColor: "#8a9099", backgroundColor: "#8a9099", tension: .2, spanGaps: true, pointRadius: 2 },
+        { label: "一般相場 (田中貴金属 銀・税込)", data: market,
+          borderColor: "#2f7ed8", backgroundColor: "#2f7ed8", tension: .2, spanGaps: true, pointRadius: 2 },
+        { label: "銀スポット (換算・税抜)", data: spot,
+          borderColor: "#2f9e44", backgroundColor: "#2f9e44", tension: .2, spanGaps: true, pointRadius: 2 },
       ],
     },
     options: {
@@ -353,11 +356,12 @@ function renderChart(history) {
       maintainAspectRatio: false,
       interaction: { mode: "index", intersect: false },
       plugins: { legend: { labels: { boxWidth: 12, font: { size: 11 } } } },
-      scales: { y: { title: { display: true, text: "円/g（税込）" } } },
+      scales: { y: { title: { display: true, text: "円/g" } } },
     },
   });
   document.getElementById("chartNote").textContent =
-    "出典：Seaforce 鋳造料金 ／ 田中貴金属 店頭小売価格（いずれも税込・目安）。日次で更新・蓄積。";
+    "出典：Seaforce 鋳造料金（税込）／ 田中貴金属 店頭小売価格（税込・2026/10/23以降は先方のアクセス制限により取得停止中）／ " +
+    "銀スポットは stooq の XAG/USD × USD/JPY から円/g換算（税抜）。いずれも目安。日次で更新・蓄積。";
 }
 function loadHistory() {
   fetch("./prices-history.json", { cache: "no-store" })
