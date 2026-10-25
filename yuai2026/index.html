@@ -361,7 +361,7 @@ function renderChart(history) {
   });
   document.getElementById("chartNote").textContent =
     "出典：Seaforce 鋳造料金（税込）／ 田中貴金属 店頭小売価格（税込・2026/10/23以降は先方のアクセス制限により取得停止中）／ " +
-    "銀スポットは LBMA銀価格 × ECB USD/JPY から円/g換算（税抜）。いずれも目安。日次で更新・蓄積。";
+    "銀スポットは Yahoo Finance の銀価格 × ECB USD/JPY から円/g換算（税抜）。いずれも目安。日次で更新・蓄積。";
 }
 function loadHistory() {
   fetch("./prices-history.json", { cache: "no-store" })
