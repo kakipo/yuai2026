@@ -2,7 +2,7 @@
   "source": "https://www.kakounet.com/cast/cast/price.html",
   "note": "地金単価は税込・目安。実際の請求は仕上がり時の相場によります。",
   "sourceUpdated": "2026/10/20",
-  "fetchedAt": "2026-10-25",
+  "fetchedAt": "2026-10-26",
   "metals": {
     "silver": {
       "metal": 464
@@ -14,7 +14,7 @@
     "sourceUpdated": "2026/10/21"
   },
   "spot": {
-    "silver": 271.97,
+    "silver": 270.77,
     "source": "銀スポット（Yahoo Finance 銀価格 × ECB USD/JPY 換算・税抜・円/g）",
     "sourceUpdated": "2026-10-23"
   }
